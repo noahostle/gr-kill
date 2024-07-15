@@ -11,12 +11,12 @@ import time
 
 
 
-api="----"
+api="-----"
 
 
 def newnum():
     try:
-        res = requests.get(f"https://juicysms.com/api/makeorder?key={api}&serviceId=1&country=NL")
+        res = requests.get(f"https://juicysms.com/api/makeorder?key={api}&serviceId=1&country=UK")
         return orderparse(res.text)
     except Exception as e:
         print(e)
@@ -39,9 +39,13 @@ def cancel(oid):
 def getsms(oid):
     try:
         res = requests.get(f"https://juicysms.com/api/getsms?key={api}&orderId={oid}")
+        i=0
         while ("WAITING" in res.text):
+            if i==60:
+                return -1
             time.sleep(1)
             res = requests.get(f"https://juicysms.com/api/getsms?key={api}&orderId={oid}") 
+            i+=1
         return res.text.split("G-")[1].split(" is")[0]
     except Exception as e:
         print(e)

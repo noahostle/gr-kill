@@ -17,15 +17,21 @@ import undetected_chromedriver as uc
 
 from modules import apiwrapper as api
 
+from modules import sms
+
 import sys
 import os
 import random
 import time
-from unidecode import unidecode
+
+cfgnum="----"
 
 
 
 def acct(oid, num):
+
+
+
     #chrome options
     chrome_options = ChromeOptions()
     chrome_options.add_argument("--disable-infobars")
@@ -166,13 +172,15 @@ def acct(oid, num):
         phoneinp = driver.find_element(By.ID, "phoneNumberId")
 
         if num[0]=="0":
-            phoneinp.send_keys("+31"+num[1:])
+            phoneinp.send_keys("+44"+num[1:])
         else:
-            phoneinp.send_keys("+31"+num)
+            phoneinp.send_keys("+44"+num)
 
         driver.find_element(By.CLASS_NAME, "VfPpkd-vQzf8d").click()
         print("[+] Entering phone number -> Done!          ")
 
+
+        time.sleep(2)
 
         if "This phone number has been used too many times" in driver.page_source:
             return -1
@@ -181,6 +189,9 @@ def acct(oid, num):
         #enter code
         print("[/] Retrieving sms code -> waiting...", end="\r")
         code=api.getsms(oid)
+        if code==-1:
+            api.cancel(oid)
+            return
         print("[+] Retrieving sms code -> Done!          ")
         print(f"[!] sms code -> {code}")
         print("[/] Entering sms code -> waiting...", end="\r")
@@ -252,16 +263,20 @@ def clear():
 
 def main():
     clear()
-    print("# Generating Accounts #\n\n")
+    print("\n\n[!] Generating Accounts\n")
 
+    print("[+] Purchasing a new number\n")
     li=api.newnum()
     if "OPEN_" in li:
         oid=li.split("OPEN_")[1]
         print(f"[+] {api.cancel(oid)}")
         main()
         return
+    if "NO_BAL" in li:
+        sms.sms(cfgnum, f"[GBot] : Juicysms balance is ${api.getbal()},\n               please refill.\n               Rate: $?.?? per review")
+        return
 
-    failsafe() if li==-1 else 0
+    return 0 if li==-1 else 0
     oid=li[0]
     num=li[1]
 
@@ -270,11 +285,12 @@ def main():
 
     while succ != -1:
         clear()
-        print(f"# Generating Accounts for {num} #\n\n")
+        print(f"[!] Generating Accounts for {num}\n")
         print(lis+"\n\n")
 
         li=api.reuse(oid)
-        failsafe() if li==-1 else 0
+        print(f"[+] Reusing {num}\n")
+        return 0 if li==-1 else 0
         oid=li[0]
         num=li[1]
         succ = acct(oid, num)
@@ -283,7 +299,4 @@ def main():
     print(f"[-] Max accounts created for {num}\n")
 
 
-def failsafe():
-    #exception should be printed by apiwrapper
-    sys.exit()
 

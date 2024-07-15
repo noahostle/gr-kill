@@ -1,79 +1,162 @@
-from sqlalchemy import true
-import undetected_chromedriver as uc
-import pandas as pd
-from selenium.webdriver.chrome import webdriver
+#!/usr/bin/python3
+
+"""
+author: c@shed
+version: 1.0
+
+"""
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+
+
+import undetected_chromedriver as uc
+
+from modules import sms
+from modules import bard
+
+import sys
+import os
 import random
-from time import sleep
+import time
 
-class GoogleReviewBot:
-    
-    def __init__(self,email,pwd,comment):
-        self.mailaddress = email
-        self.password = pwd
-        self.comment = comment
-        self.waitDuration = [3,4,5]
-        self.initialize()
+cfgnum="-----"
+star_rating="5" #(1,2,3,4,5)
+placeurl="-----"
+#you can go to a place on maps and click review to start writing, then copy the link and it will even keep the review textbox open for you hahaha
 
-    def initialize(self):
-        self.i = 0
-        #PlaceURL = "https://www.google.com/search?q=g%26d+cleaning+and+maintenance+services+smeaton+grange&sca_esv=f911e4bfb540ceed&sca_upv=1&biw=1440&bih=685&tbm=lcl&sxsrf=ADLYWIJoNHx3DncPzTRj9qRYRtvCWFiDcw%3A1720590136290&ei=OB-OZtGuEf2l2roPtYq2sAs&oq=g&gs_lp=Eg1nd3Mtd2l6LWxvY2FsIgFnKgIIADIEECMYJzIEECMYJzIEECMYJzIKEAAYgAQYQxiKBTIKEAAYgAQYQxiKBTIKEAAYgAQYQxiKBTIQEAAYgAQYsQMYQxiDARiKBTILEAAYgAQYsQMYgwEyChAAGIAEGEMYigUyEBAAGIAEGLEDGEMYgwEYigVI1gxQAFgAcAB4AJABAJgBrAGgAawBqgEDMC4xuAEByAEA-AEBmAIBoAK4AZgDAJIHAzAuMaAH4Qk&sclient=gws-wiz-local" #ENTER YOUR LINK HERE
-        PlaceURL = "https://www.google.com/search?q=docker+river+airport&sca_esv=f911e4bfb540ceed&sca_upv=1&biw=1440&bih=685&tbm=lcl&sxsrf=ADLYWII23NQcyhTpgaLDwOtPa2X4d_YSLw%3A1720590177931&ei=YR-OZqbAOIml2roPhtu-gA4&ved=0ahUKEwjm9O_y4ZuHAxWJklYBHYatD-AQ4dUDCAk&uact=5&oq=docker+river+airport&gs_lp=Eg1nd3Mtd2l6LWxvY2FsIhRkb2NrZXIgcml2ZXIgYWlycG9ydDIEECMYJzIIEAAYgAQYogQyCBAAGIAEGKIEMggQABiiBBiJBTIIEAAYgAQYogRIuTNQ6wZYrzBwBHgAkAEBmAGEAqAB9ySqAQYwLjE2Ljm4AQPIAQD4AQGYAhygApUkqAIKwgICECbCAgsQABiABBiRAhiKBcICCxAAGIAEGLEDGIMBwgIIEAAYgAQYsQPCAgcQIxgnGOoCwgIREAAYgAQYkQIYsQMYgwEYigXCAgoQABiABBhDGIoFwgINEAAYgAQYsQMYQxiKBcICEBAAGIAEGLEDGEMYgwEYigXCAgoQABiABBgUGIcCwgIFEAAYgATCAgYQABgWGB7CAggQABgWGB4YD8ICBRAhGKABwgIEECEYFZgDBYgGAZIHBjQuMTYuOKAH0ZwB&sclient=gws-wiz-local"
-        self.driver = uc.Chrome()
-        self.driver.delete_all_cookies()
-        self.urls = ["https://accounts.google.com/v3/signin/identifier?ifkv=AdF4I75QJIJ2YH6aEWPPXLrxDZJ0WCKgWVcfD-GuIu-vt4PeSPwzUmRRowzbZSkmBjGnAwfyEXoG&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S1242411337%3A1720590362249819&ddm=0",PlaceURL]
-        self.driver.get(self.urls[self.i])
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID,("identifierNext"))))
+def review(email,pwd):
+
+
+
+    #chrome options
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+    #chrome_options.add_argument("--user-data-dir=data")
+    chrome_options.add_argument("--profile-directory=Default")
+
+
+    driver = uc.Chrome(options=chrome_options)
+
+    try:
+
+        name=email.split(".")[0]
+
+        driver.get("https://accounts.google.com/v3/signin/identifier?hl=en-gb&ifkv=AdF4I75c624myeSaERYqPTkkidomC6WusiqWHanG2SHUODzIyVvo2jTzMpQeAc9Bc8u8Dv-5i4Kr7g&flowName=GlifWebSignIn&flowEntry=ServiceLogin&dsh=S1476408863%3A1721005061913896&ddm=0")
+
+        #login
+        print(f"\n[/] Logging in as {name} -> waiting...", end="\r")
+
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID,("identifierNext"))))
+        driver.find_element(By.ID,"identifierId").send_keys(email)
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID,("identifierNext")))).click()
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID,"passwordNext")))
+        driver.find_element(By.NAME,"Passwd").send_keys(pwd)
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID,"passwordNext"))).click()
         
-    def _login(self):
+
         try:
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID,("identifierNext"))))
-            login=self.driver.find_element(By.ID,"identifierId")
-            login.send_keys(self.mailaddress)
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID,("identifierNext")))).click()
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID,"passwordNext")))
-            password=self.driver.find_element(By.NAME,("password")) 
-            password.send_keys(self.password)
-            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.ID,"passwordNext"))).click()
-            sleep(random.choice(self.waitDuration))
+            notnow = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, f"//*[text()='Not now']")))
+            parent = notnow.find_element(By.XPATH, "./..")
+            parent.click()
         except:
-            print("There is a problem 1.")
-            pass
-         
-    def _comment(self):
-        try:
-            self.i +=1
-            self.driver.get(self.urls[self.i]) 
-            sleep(random.choice(self.waitDuration))   
-            WebDriverWait(self.driver, 10).until(EC.frame_to_be_available_and_switch_to_it((By.XPATH,"/html/body/div[18]/iframe")))
-            self.driver.find_element(By.XPATH,("/html/body/div[1]/c-wiz/div/div/div/div/div[1]/div[3]/div[2]/div[3]/div[1]/textarea")).send_keys("Comment")
-            elem=WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#yDmH0d > c-wiz > div > div > div > div > div.O51MUd > div.l5dc7b > div.DTDhxc.eqAW0b > div.euWHWd.aUVumf > div > div:nth-child(5)")))
-            self.driver.execute_script("arguments[0].click();", elem)
-            WebDriverWait(self.driver,10).until(EC.element_to_be_clickable((By.CSS_SELECTOR,"#ZRGZAf > span"))).click()
-            sleep(random.choice(self.waitDuration))
-            self.completedAccounts.write(self.mailaddress + "-" + self.password + "\n")
-            self.driver.close()
-        except:
-            print("There is a problem in Comment.")
             pass
 
-    
-    
-if __name__ == "__main__":
-    credsfile=open("creds.txt","r")
+        print(f"[+] Logging in as {name} -> Done!          ")
 
-    for line in credsfile:
-        a=line.split(",")
-        email=a[0]
-        pwd=a[1]
-        comment="test"
 
-        GRB = GoogleReviewBot(email,pwd,comment)
-        try:
-            GRB._login()
-            GRB._comment()
-        except:
-            print("There is a problem.")
-            pass
+        #LEAE REVIEW
+
+        print(f"[/] Giving {star_rating} star review -> waiting...", end="\r")
+        WebDriverWait(driver, 25).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        driver.get(placeurl)
+
+
+        iframe = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, f"//iframe[@name='goog-reviews-write-widget']")))
+        
+        driver.switch_to.frame(iframe)
+
+        
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, f"//*[text()='Posting publicly across Google']"))).click()
+
+
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, f"//div[@data-rating='{star_rating}']"))).click()
+        print(f"[+] Giving {star_rating} star review -> Done!           ")
+
+
+        print(f"[/] Generating review -> waiting...", end="\r")
+        reviewtext = bard.getreview()
+        print(f"[/] Generating review -> Done!\n")
+
+        print("[!] Review:\n"+reviewtext+"\n")
+        print("[/] Tweak the prompt to better suit your business, or override reviewtext with desired string literal\n")
+
+
+        print(f"[/] Posting review -> waiting...", end="\r")
+        driver.find_element(By.XPATH, "//textarea[@placeholder='Share details of your own experience at this place']").send_keys(reviewtext)
+
+        post = driver.find_element(By.XPATH, f"//*[text()='Post']")
+        parent = post.find_element(By.XPATH, "./../../..")
+        parent.click()
+        print(f"[/] Posting review -> Done!              \n\n")
+
+        sms.sms(cfgnum, f"[GBot] : {name} just left a review!")
+        
+
+        time.sleep(3)
+        driver.quit()
+
+
+    except Exception as e:
+        print(e) 
+
+def main():
+
+
+    c = open("data/creds.txt", "r")
+    u = open("data/used.txt", "r")
+
+    clines=c.readlines()
+    cl=len(clines)
+    ul=len(u.readlines())
+
+    u.close()
+    u=open("data/used.txt", "a")
+
+    print(f"\n[/] {ul} reviews made!")
+    print(f"[+] {cl} accounts available\n")
+    n=input("[?] Number of reviews to leave (-1 for max)\n[?] >> ")
+    try:
+        n=int(n)
+    except:
+        print("[-] invalid input\n\n")
+
+    if n==-1:
+        n=cl
+
+    if n>cl or n<0:
+        print("[-] invalid input\n\n")
+        return
+
+
+    for x in range(0,n):
+        creds = clines.pop(0).strip()
+        u.write(creds+"\n")
+        creds=creds.split(",")
+        review(creds[0],creds[1])
+
+
+    c.close()
+    u.close()
+
+    print(clines)
+    c=open("data/creds.txt", "w")
+    c.writelines(clines)
+    c.close()
+
+
+

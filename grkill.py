@@ -21,5 +21,24 @@ cringebanner="""
 
 print(f"\n\n{cringebanner}\n\n")
 
+menu="""
 
-acct.main()
+[+] Menu
+	1.	Gen Accounts
+	2.	Make Reviews
+	3.	Autorun (Experimental)
+	0.	Quit
+
+[?] >> """
+
+
+a = 4
+
+while (a !="0"):
+	if a=="1":
+		acct.main()
+	if a=="2":
+		review.main()
+	if a=="3":
+		pass
+	a = input(menu)
